@@ -7,11 +7,13 @@ from flask import Flask, request, url_for, make_response, jsonify, abort, Respon
 
 app = Flask(__name__)
 
+
 @app.after_request
 def after_request(response):
     """ allows cross-domain uploads via ajax. """
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+    
 
 @app.route('/upload', methods=["POST"])
 def upload():
@@ -36,8 +38,9 @@ def upload():
             for file_name in file_names]
 
     return jsonify(response)
+    
 
-@app.route("/serve/<blob_key>")
+@app.route("/serve/<blob_key>", methods=["GET"])
 def serve(blob_key):
     blob_info = blobstore.get(blob_key)
     if not blob_info:
@@ -49,8 +52,6 @@ def serve(blob_key):
         #the idea of blobstore, at least in current project, is that uploaded blobs may be deleted but never modified. so, tell the client to fetch it from the cache.
         return Response(status=304)
 
-
-
     response = make_response()
     response.headers['Content-Type'] = blob_info.content_type
     #a very long max-age (10 yrs)
@@ -61,5 +62,5 @@ def serve(blob_key):
 
     #this line tells google app engine server to fill the body of this response with the actual blob content.
     response.headers['X-AppEngine-BlobKey'] = blob_key
+    
     return response
-
