@@ -3,12 +3,13 @@
 from google.appengine.ext import blobstore
 from google.appengine.api import files
 
-from flask import Flask, request, url_for, make_response, jsonify, abort
+from flask import Flask, request, url_for, make_response, jsonify, abort, Response
 
 app = Flask(__name__)
 
 @app.after_request
 def after_request(response):
+    """ allows cross-domain uploads via ajax. """
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -40,14 +41,25 @@ def upload():
 def serve(blob_key):
     blob_info = blobstore.get(blob_key)
     if not blob_info:
+        #the blob does not exist. return 404 error.
         abort(404)
+
+    if request.headers.get('If-None-Match'):
+        #the client has an Etag of previously served content.
+        #the idea of blobstore, at least in current project, is that uploaded blobs may be deleted but never modified. so, tell the client to fetch it from the cache.
+        return Response(status=304)
+
+
 
     response = make_response()
     response.headers['Content-Type'] = blob_info.content_type
-    response.headers['X-AppEngine-BlobKey'] = blob_key
+    #a very long max-age (10 yrs)
+    response.headers['Cache-Control'] = 'public, max-age=315360000'
 
-    #add your caching headers
-    #response.headers['Expires'] = 'Sun, 19 Jul 2020 00:00:00 GMT'
-    #response.headers['Cache-Control'] = 'public, max-age=315360000'
+    #very basic caching based on etags; etag == blob_key
+    response.headers['ETag'] = '"%s"' %blob_key
+
+    #this line tells google app engine server to fill the body of this response with the actual blob content.
+    response.headers['X-AppEngine-BlobKey'] = blob_key
     return response
 
