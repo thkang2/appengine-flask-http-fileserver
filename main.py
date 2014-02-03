@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 @app.after_request
 def after_request(response):
-    """ allows cross-domain uploads via ajax. """
+    """ allows cross-domain uploads (CORS) via ajax. """
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
     
