@@ -1,0 +1,55 @@
+<!doctype HTML>
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+</head>
+<body>
+<form method="POST" enctype="multipart/form-data">
+    <p>Upload File: <input type="file" name="file" multiple></p>
+    <p>
+    <button type="button" id="do_upload">upload it!</button>
+    </p>
+
+
+</form>
+
+<strong>uploaded:</strong>
+
+<script type="text/javascript">
+$(function () {
+    var files;
+    var url='your app engine upload url';
+
+    $('input[name=file]').on('change', function (event) {
+        files = event.target.files;
+    });
+
+    $('#do_upload').on('click', function () {
+        if (files) {
+            var data = new FormData();
+            $.each(files, function(i, file) {
+                data.append('file' + i, file);
+            });
+
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: data,
+                cache: false,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function (resp, textStatus, jqXHR) {
+                    $.map(resp.uploaded_files, function (data) {
+                        $('body').append($('<pre>' + data + '</pre>'));
+                    });
+                }
+            });
+        }
+    });
+});
+</script>
+
+</body>
+</html>
+
